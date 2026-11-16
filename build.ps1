@@ -1,8 +1,15 @@
-# Builds dist\8BitDo-XInput-Bridge.exe (single file, includes the ViGEmBus installer and mapping.json).
+# Builds dist\DInput-to-XInput.exe (single file, no console window). It bundles the ViGEmBus driver
+# installer (shipped inside vgamepad) and the default mappings folder.
 # Setup once:  python -m venv .venv ; .\.venv\Scripts\python.exe -m pip install -r requirements.txt
 Set-Location $PSScriptRoot
-$map = (Resolve-Path 'mapping.json').Path
+$py = '.\.venv\Scripts\python.exe'
+New-Item -ItemType Directory -Force assets | Out-Null
+& $py icon.py assets\icon.ico
+$icon = (Resolve-Path 'assets\icon.ico').Path
+$maps = (Resolve-Path 'mappings').Path
 # PyInstaller logs to stderr, so do not let PowerShell treat that as a failure; check the exit code instead.
-.\.venv\Scripts\python.exe -m PyInstaller --noconfirm --onefile --console --name 8BitDo-XInput-Bridge --collect-all vgamepad --add-data "$map;." --distpath dist --workpath build --specpath build bridge.py 2>&1 | Select-Object -Last 3
+& $py -m PyInstaller --noconfirm --onefile --windowed --name DInput-to-XInput --icon $icon `
+    --collect-all vgamepad --hidden-import pystray._win32 `
+    --add-data "$maps;mappings" --distpath dist --workpath build --specpath build app.py 2>&1 | Select-Object -Last 3
 if ($LASTEXITCODE -ne 0) { throw "PyInstaller failed with exit code $LASTEXITCODE" }
-Get-Item dist\8BitDo-XInput-Bridge.exe | Select-Object Name, Length
+Get-Item dist\DInput-to-XInput.exe | Select-Object Name, Length

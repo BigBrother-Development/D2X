@@ -1,0 +1,139 @@
+{
+  "name": "8BitDo Ultimate 2",
+  "vidpid": "2DC8:6012",
+  "device_name": "8BitDo Ultimate 2 Wireless (Bluetooth, DInput mode)",
+  "rest": [
+    -0.0078125,
+    -0.0078125,
+    -0.0078125,
+    -0.0078125,
+    -0.0078125,
+    -0.0078125
+  ],
+  "bindings": {
+    "A": {
+      "type": "button",
+      "index": 0
+    },
+    "B": {
+      "type": "button",
+      "index": 1
+    },
+    "X": {
+      "type": "button",
+      "index": 3
+    },
+    "Y": {
+      "type": "button",
+      "index": 4
+    },
+    "LB": {
+      "type": "button",
+      "index": 6
+    },
+    "RB": {
+      "type": "button",
+      "index": 7
+    },
+    "BACK": {
+      "type": "button",
+      "index": 10
+    },
+    "START": {
+      "type": "button",
+      "index": 11
+    },
+    "GUIDE": {
+      "type": "button",
+      "index": 12
+    },
+    "LS": {
+      "type": "button",
+      "index": 13
+    },
+    "RS": {
+      "type": "button",
+      "index": 14
+    },
+    "DUP": {
+      "type": "hat",
+      "index": 0,
+      "value": [
+        0,
+        1
+      ]
+    },
+    "DDOWN": {
+      "type": "hat",
+      "index": 0,
+      "value": [
+        0,
+        -1
+      ]
+    },
+    "DLEFT": {
+      "type": "hat",
+      "index": 0,
+      "value": [
+        -1,
+        0
+      ]
+    },
+    "DRIGHT": {
+      "type": "hat",
+      "index": 0,
+      "value": [
+        1,
+        0
+      ]
+    },
+    "LT": {
+      "type": "button",
+      "index": 8
+    },
+    "RT": {
+      "type": "button",
+      "index": 9
+    },
+    "LX": {
+      "type": "axis",
+      "index": 0,
+      "rest": -0.0078125,
+      "full": 0.999969482421875
+    },
+    "LY": {
+      "type": "axis",
+      "index": 1,
+      "rest": -0.0078125,
+      "full": -1.0
+    },
+    "RX": {
+      "type": "axis",
+      "index": 3,
+      "rest": -0.0078125,
+      "full": 0.999969482421875
+    },
+    "RY": {
+      "type": "axis",
+      "index": 4,
+      "rest": -0.0078125,
+      "full": -1.0
+    },
+    "L4": {
+      "type": "button",
+      "index": 16
+    },
+    "R4": {
+      "type": "button",
+      "index": 17
+    },
+    "PL": {
+      "type": "button",
+      "index": 5
+    },
+    "PR": {
+      "type": "button",
+      "index": 2
+    }
+  }
+}
