@@ -10,6 +10,7 @@ os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "1"
 import copy, ctypes, importlib.util, shutil, subprocess, sys, threading, time, traceback
 import pygame
 import storage
+import hidhide
 
 # Xbox 360 pads (including our own virtual one) are already XInput: never offer them as a source.
 EXCLUDE_VIDPID = {"045E:028E"}
@@ -163,9 +164,13 @@ class Engine(threading.Thread):
         self.device_pref = None
         self.vg = None
         self.pad = None
+        self.hide_enabled = False
+        self.hider = hidhide.Hider()
+        self._hide_next = 0.0
+        self._hid_dirty = True   # first pass also cleans up after a crashed earlier run
         self._st = {
             "driver": "starting", "driver_msg": "",
-            "devices": [], "active_name": "",
+            "devices": [], "active_name": "", "hide": "off", "hide_msg": "",
             "mode": "bridge", "prompt": "", "step": 0, "steps": len(STEPS), "wizard_result": None,
         }
 
@@ -186,6 +191,12 @@ class Engine(threading.Thread):
 
     def rescan(self):
         self._rescan.set()
+
+    def set_hide(self, on):
+        """Hide the real controller from other programs (needs the HidHide driver)."""
+        with self._lock:
+            self.hide_enabled = bool(on)
+        self._hide_next = 0.0
 
     def retry_driver(self):
         self._retry_driver.set()
@@ -272,6 +283,7 @@ class Engine(threading.Thread):
         finally:
             self._release()
             self.pad = None
+            self.hider.unhide()
 
     def _main(self):
         pygame.display.init()
@@ -323,8 +335,11 @@ class Engine(threading.Thread):
                     self._set(active_name="")
                 elif held is None or held["guid"] != target["guid"]:
                     j = pygame.joystick.Joystick(target["index"])
-                    held = {"j": j, "guid": target["guid"], "iid": j.get_instance_id(), "name": target["name"]}
+                    held = {"j": j, "guid": target["guid"], "iid": j.get_instance_id(), "name": target["name"],
+                            "vidpid": target["vidpid"]}
                     self._set(active_name=target["name"])
+
+            self._sync_hide(held, now)
 
             with self._lock:
                 m = self.mapping
@@ -340,6 +355,25 @@ class Engine(threading.Thread):
                 time.sleep(0.004)
             else:
                 time.sleep(0.05)
+
+    def _sync_hide(self, held, now):
+        if now < self._hide_next:
+            return
+        self._hide_next = now + 3.0
+        with self._lock:
+            on = self.hide_enabled
+        if not on:
+            if self._hid_dirty and self.hider.unhide():
+                self._hid_dirty = False
+            self._set(hide="off", hide_msg="")
+        elif not hidhide.is_installed():
+            self._set(hide="missing", hide_msg="")
+        elif not held:
+            self._set(hide="waiting", hide_msg="")
+        else:
+            ok, msg = self.hider.hide(held["vidpid"])
+            self._hid_dirty = True
+            self._set(hide="ok" if ok else "error", hide_msg=msg)
 
     def _apply(self, snap, m):
         vg = self.vg

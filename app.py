@@ -2,6 +2,7 @@
 import ctypes, os, queue, sys, threading, time, traceback
 
 import engine as eng  # must be imported first: sets the SDL environment before pygame loads
+import hidhide
 import storage
 from icon import make_icon
 
@@ -19,6 +20,7 @@ def dev_label(d):
 class App:
     def __init__(self, autostart=False, screenshot=None):
         self.settings = storage.load_settings()
+        storage.migrate_startup()
         self.q = queue.Queue()
         self.tray = None
         self.wiz = None            # wizard dialog widgets
@@ -29,6 +31,7 @@ class App:
         self.engine = eng.Engine()
         self._apply_mapping_to_engine(self.settings.get("mapping"))
         self.engine.set_device(self.settings.get("device"))
+        self.engine.set_hide(self.settings.get("hide_device"))
         self.engine.start()
 
         self.root = root = tk.Tk()
@@ -65,6 +68,10 @@ class App:
         ttk.Label(st, text="Controller:").grid(row=1, column=0, sticky="w")
         self.lbl_dev = ttk.Label(st, text="...", wraplength=330)
         self.lbl_dev.grid(row=1, column=1, columnspan=2, sticky="w", padx=6)
+        ttk.Label(st, text="Hiding:").grid(row=2, column=0, sticky="w")
+        self.lbl_hide = ttk.Label(st, text="Off", wraplength=330)
+        self.lbl_hide.grid(row=2, column=1, sticky="w", padx=6)
+        self.btn_hh_install = ttk.Button(st, text="Install HidHide", command=self.install_hidhide)
 
         cf = ttk.LabelFrame(f, text="Controller to convert", padding=8)
         cf.grid(row=1, column=0, sticky="ew", pady=(10, 0))
@@ -87,14 +94,17 @@ class App:
             row=1, column=2, pady=(8, 0))
         self.refresh_mappings()
 
+        self.var_hide = tk.BooleanVar(value=bool(self.settings.get("hide_device")))
         self.var_startup = tk.BooleanVar(value=storage.startup_enabled())
         self.var_tray = tk.BooleanVar(value=bool(self.settings["minimize_to_tray"]))
+        ttk.Checkbutton(f, text="Hide the original controller from games (uses the HidHide driver)",
+                        variable=self.var_hide, command=self.on_hide).grid(row=3, column=0, sticky="w", pady=(12, 0))
         ttk.Checkbutton(f, text="Start with Windows", variable=self.var_startup,
-                        command=self.on_startup).grid(row=3, column=0, sticky="w", pady=(12, 0))
+                        command=self.on_startup).grid(row=4, column=0, sticky="w")
         ttk.Checkbutton(f, text="Minimize to tray", variable=self.var_tray,
-                        command=self.on_tray_opt).grid(row=4, column=0, sticky="w")
+                        command=self.on_tray_opt).grid(row=5, column=0, sticky="w")
         ttk.Label(f, text="Keep this program running while you play.", foreground="#666666").grid(
-            row=5, column=0, sticky="w", pady=(10, 0))
+            row=6, column=0, sticky="w", pady=(10, 0))
 
     def refresh_mappings(self, select=None):
         names = storage.list_mappings()
@@ -203,6 +213,26 @@ class App:
         threading.Thread(target=work, daemon=True).start()
 
     # ---- options ----
+    def on_hide(self):
+        self.settings["hide_device"] = bool(self.var_hide.get())
+        storage.save_settings(self.settings)
+        self.engine.set_hide(self.settings["hide_device"])
+
+    def install_hidhide(self):
+        if not messagebox.askokcancel(
+                storage.APP_NAME, "This installs the HidHide driver (included with D2X). Windows will ask for "
+                "administrator permission and the installer may ask you to restart the PC. Continue?"):
+            return
+        self.btn_hh_install.state(["disabled"])
+
+        def work():
+            try:
+                ok = hidhide.install()
+            except Exception:
+                ok = False
+            self.q.put("hidhide_ok" if ok else "hidhide_fail")
+        threading.Thread(target=work, daemon=True).start()
+
     def on_startup(self):
         try:
             storage.set_startup(self.var_startup.get())
@@ -272,6 +302,13 @@ class App:
             elif msg == "quit":
                 self.quit()
                 return
+            elif msg == "hidhide_ok":
+                self.engine.set_hide(self.settings.get("hide_device"))
+            elif msg == "hidhide_fail":
+                self.btn_hh_install.state(["!disabled"])
+                messagebox.showwarning(storage.APP_NAME, "HidHide is not available yet. If you cancelled the "
+                                       "administrator prompt, try again. If the installer asked for a restart, "
+                                       "restart Windows and open D2X again.")
             elif msg == "driver_ok":
                 self.engine.retry_driver()
             elif msg == "driver_fail":
@@ -300,6 +337,20 @@ class App:
             self.lbl_dev.config(text="Choose a mapping, or create one with New mapping...", foreground="")
         else:
             self.lbl_dev.config(text="Waiting for the controller (press a button to wake it)...", foreground="")
+
+        hs = s["hide"]
+        self.btn_hh_install.grid_remove()
+        if hs == "off":
+            self.lbl_hide.config(text="Off (games can see the original controller)", foreground="")
+        elif hs == "ok":
+            self.lbl_hide.config(text="Original controller hidden from other programs", foreground="#1a7f37")
+        elif hs == "waiting":
+            self.lbl_hide.config(text="Will hide the controller once it connects", foreground="")
+        elif hs == "missing":
+            self.lbl_hide.config(text="HidHide driver is not installed", foreground="#b42318")
+            self.btn_hh_install.grid(row=2, column=2)
+        else:
+            self.lbl_hide.config(text="Could not hide: " + (s["hide_msg"] or "unknown error"), foreground="#b42318")
 
         guids = [d["guid"] for d in s["devices"]]
         if guids != self.dev_guids:
@@ -333,7 +384,9 @@ class App:
 
     def _shot(self):
         from PIL import ImageGrab
+        self.root.attributes("-topmost", True)  # make sure no other window covers it
         self.root.update()
+        time.sleep(0.4)
         x, y = self.root.winfo_rootx(), self.root.winfo_rooty()
         ImageGrab.grab((x - 8, y - 40, x + self.root.winfo_width() + 8, y + self.root.winfo_height() + 8)).save(
             self.screenshot)

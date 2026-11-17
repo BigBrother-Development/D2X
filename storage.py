@@ -12,7 +12,8 @@ MAPPINGS_DIR = os.path.join(DATA_DIR, "mappings")
 SETTINGS_FILE = os.path.join(DATA_DIR, "settings.json")
 LOG_FILE = os.path.join(DATA_DIR, "d2x.log")
 
-DEFAULT_SETTINGS = {"mapping": None, "device": None, "minimize_to_tray": False, "seeded": False}
+DEFAULT_SETTINGS = {"mapping": None, "device": None, "minimize_to_tray": False, "hide_device": False,
+                    "seeded": False}
 
 
 def ensure_dirs():
@@ -28,7 +29,7 @@ def load_settings():
     ensure_dirs()
     s = dict(DEFAULT_SETTINGS)
     try:
-        with open(SETTINGS_FILE, encoding="utf-8") as f:
+        with open(SETTINGS_FILE, encoding="utf-8-sig") as f:
             s.update(json.load(f))
     except (FileNotFoundError, json.JSONDecodeError):
         pass
@@ -109,6 +110,15 @@ def _run_value_exists(name):
         return True
     except FileNotFoundError:
         return False
+
+
+def migrate_startup():
+    """Point an entry made under the old name (before the D2X rename) at the current exe."""
+    if FROZEN and _run_value_exists(OLD_RUN_NAME):
+        try:
+            set_startup(True)
+        except OSError:
+            pass
 
 
 def startup_enabled():

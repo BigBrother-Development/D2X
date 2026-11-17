@@ -6,7 +6,7 @@ Makes a generic DInput gamepad (Bluetooth or USB) look like an Xbox 360 (XInput)
 
 ## How it works
 
-The program reads the real controller through SDL (pygame) and feeds a virtual Xbox 360 pad created with the [ViGEmBus](https://github.com/nefarius/ViGEmBus) driver (via [vgamepad](https://github.com/yannbouteiller/vgamepad)). A small window lets you pick the controller and a mapping, create new mappings, and set start-with-Windows and minimize-to-tray. Games see a normal XInput controller.
+The program reads the real controller through SDL (pygame) and feeds a virtual Xbox 360 pad created with the [ViGEmBus](https://github.com/nefarius/ViGEmBus) driver (via [vgamepad](https://github.com/yannbouteiller/vgamepad)). A small window lets you pick the controller and a mapping, create new mappings, and set hide-original-controller, start-with-Windows and minimize-to-tray. Games see a normal XInput controller.
 
 ## Install
 
@@ -30,6 +30,10 @@ The virtual pad needs the ViGEmBus driver. The EXE bundles the installer (versio
 
 ViGEmBus is end-of-life upstream. It still works, but it is no longer updated.
 
+### The HidHide driver (optional)
+
+Only needed for the **Hide the original controller from games** option (see below). The EXE bundles the official HidHide 1.5.230 installer. If you turn the option on and HidHide is missing, the window shows an **Install HidHide** button that runs the bundled installer (administrator permission, and the installer may ask for a restart). The installer is downloaded by `build.ps1` and checked against a pinned SHA-256 when you build.
+
 ## Use
 
 1. Connect the controller (Bluetooth pairing or USB). If it is a Bluetooth pad that sleeps, press a button to wake it.
@@ -40,8 +44,18 @@ Window options:
 
 - **Controller:** `Auto` matches the connected controller to the selected mapping by its USB vendor:product ID. Pick a specific controller to override that. **Refresh** rescans.
 - **Mapping:** the mapping to use. Buttons: **New mapping...**, **Delete**, **Open folder**.
+- **Hide the original controller from games:** see the next section.
 - **Start with Windows:** adds a per-user startup entry (no admin needed). It starts hidden in the tray, or minimized if the tray option is off.
 - **Minimize to tray:** minimize and the close button hide the window to the system tray. Right-click the tray icon for Show and Exit.
+
+### Hiding the original controller
+
+Without this option, games can see two controllers: the real DInput pad and the virtual Xbox 360 pad. Some games read both and double every input. Tick **Hide the original controller from games** and D2X uses [HidHide](https://github.com/nefarius/HidHide) to hide the real pad from every program except D2X, so games see only the virtual one.
+
+- D2X adds the real pad to HidHide's blacklist while it runs and removes it again when you exit D2X. D2X's own exe is added to HidHide's application whitelist (this entry stays) so it can keep reading the pad.
+- If D2X is killed or crashes, the pad stays hidden until you start D2X again (with the option off, it clears the entry) or remove it with the HidHide configuration client.
+- Turning the option on also switches HidHide's global "hiding active" flag on if it was off, and puts it back when you exit.
+- Hiding was tested only with the 8BitDo Ultimate 2 over Bluetooth. USB pads are matched by their `USB\` and `HID\` device nodes, which is untested.
 
 ## Creating a mapping for your controller
 
@@ -92,10 +106,10 @@ Bug fixes and other improvements are welcome too.
 - Xbox 360 style pads are hidden from the list: they are already XInput, and the virtual pad itself is one.
 - An Xbox 360 pad has 10 buttons plus the D-pad and Guide, so extra buttons (back paddles and similar) cannot be passed on.
 - On some pads the triggers are reported as plain buttons, so they are fully on or off (see above).
-- The real DInput pad stays visible to games next to the virtual one. If a game double-reads it, hide it with [HidHide](https://github.com/nefarius/HidHide).
+- The real DInput pad stays visible to games next to the virtual one unless you tick **Hide the original controller from games** (needs the HidHide driver).
 - Windows 11 is untested.
 - Only the 8BitDo Ultimate 2 over Bluetooth has been tested.
 
 ## License
 
-[MIT](LICENSE)
+[MIT](LICENSE). Bundled components and their licenses are listed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
