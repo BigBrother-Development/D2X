@@ -1,19 +1,26 @@
 """Paths, mapping files, settings and the start-with-Windows registry entry."""
 import json, os, re, shutil, sys, winreg
 
-APP_NAME = "DInput to XInput"
+APP_NAME = "D2X - DInput to XInput"
 FROZEN = getattr(sys, "frozen", False)
 BUNDLE = getattr(sys, "_MEIPASS", os.path.dirname(os.path.abspath(__file__)))
 
-DATA_DIR = os.path.join(os.environ.get("APPDATA", os.path.expanduser("~")), "DInput2XInput")
+_APPDATA = os.environ.get("APPDATA", os.path.expanduser("~"))
+DATA_DIR = os.path.join(_APPDATA, "D2X")
+_OLD_DATA_DIR = os.path.join(_APPDATA, "DInput2XInput")  # name used before the D2X rename
 MAPPINGS_DIR = os.path.join(DATA_DIR, "mappings")
 SETTINGS_FILE = os.path.join(DATA_DIR, "settings.json")
-LOG_FILE = os.path.join(DATA_DIR, "dinput2xinput.log")
+LOG_FILE = os.path.join(DATA_DIR, "d2x.log")
 
 DEFAULT_SETTINGS = {"mapping": None, "device": None, "minimize_to_tray": False, "seeded": False}
 
 
 def ensure_dirs():
+    if not os.path.isdir(DATA_DIR) and os.path.isdir(_OLD_DATA_DIR):  # keep mappings from older versions
+        try:
+            os.rename(_OLD_DATA_DIR, DATA_DIR)
+        except OSError:
+            pass
     os.makedirs(MAPPINGS_DIR, exist_ok=True)
 
 
@@ -91,16 +98,21 @@ def delete_mapping(name):
 # ---- start with Windows (per-user Run key, no admin needed) ----------------
 
 RUN_KEY = r"Software\Microsoft\Windows\CurrentVersion\Run"
-RUN_NAME = "DInput2XInput"
+RUN_NAME = "D2X"
+OLD_RUN_NAME = "DInput2XInput"  # name used before the D2X rename
 
 
-def startup_enabled():
+def _run_value_exists(name):
     try:
         with winreg.OpenKey(winreg.HKEY_CURRENT_USER, RUN_KEY) as k:
-            winreg.QueryValueEx(k, RUN_NAME)
+            winreg.QueryValueEx(k, name)
         return True
     except FileNotFoundError:
         return False
+
+
+def startup_enabled():
+    return _run_value_exists(RUN_NAME) or _run_value_exists(OLD_RUN_NAME)
 
 
 def set_startup(on):
@@ -111,6 +123,7 @@ def set_startup(on):
             cmd = f'"{sys.executable}" "{os.path.abspath(os.path.join(BUNDLE, "app.py"))}"'
         with winreg.OpenKey(winreg.HKEY_CURRENT_USER, RUN_KEY, 0, winreg.KEY_SET_VALUE) as k:
             winreg.SetValueEx(k, RUN_NAME, 0, winreg.REG_SZ, cmd + " --autostart")
-    elif startup_enabled():
-        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, RUN_KEY, 0, winreg.KEY_SET_VALUE) as k:
-            winreg.DeleteValue(k, RUN_NAME)
+    for name in (RUN_NAME, OLD_RUN_NAME):
+        if (not on or name == OLD_RUN_NAME) and _run_value_exists(name):
+            with winreg.OpenKey(winreg.HKEY_CURRENT_USER, RUN_KEY, 0, winreg.KEY_SET_VALUE) as k:
+                winreg.DeleteValue(k, name)

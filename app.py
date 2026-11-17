@@ -1,4 +1,4 @@
-"""DInput to XInput: graphical front end."""
+"""D2X (DInput to XInput): graphical front end."""
 import ctypes, os, queue, sys, threading, time, traceback
 
 import engine as eng  # must be imported first: sets the SDL environment before pygame loads
@@ -223,7 +223,7 @@ class App:
             pystray.MenuItem("Show", lambda: self.q.put("show"), default=True),
             pystray.MenuItem("Exit", lambda: self.q.put("quit")),
         )
-        self.tray = pystray.Icon("dinput2xinput", make_icon(64), storage.APP_NAME, menu)
+        self.tray = pystray.Icon("d2x", make_icon(64), storage.APP_NAME, menu)
         self.tray.run_detached()
         self.root.withdraw()
 
@@ -341,7 +341,7 @@ class App:
 
 
 def single_instance():
-    ctypes.windll.kernel32.CreateMutexW(None, False, "Local\\DInput2XInputSingleInstance")
+    ctypes.windll.kernel32.CreateMutexW(None, False, "Local\\D2XSingleInstance")
     return ctypes.windll.kernel32.GetLastError() != 183  # ERROR_ALREADY_EXISTS
 
 
@@ -353,7 +353,7 @@ def main():
     args = sys.argv[1:]
     shot = args[args.index("--screenshot") + 1] if "--screenshot" in args else None
     if not shot and not single_instance():
-        ctypes.windll.user32.MessageBoxW(0, "DInput to XInput is already running (check the system tray).",
+        ctypes.windll.user32.MessageBoxW(0, "D2X is already running (check the system tray).",
                                          storage.APP_NAME, 0x40)
         return
     try:

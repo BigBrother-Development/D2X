@@ -1,4 +1,4 @@
-# DInput to XInput
+# D2X: DInput to XInput
 
 Makes a generic DInput gamepad (Bluetooth or USB) look like an Xbox 360 (XInput) controller to Windows, so games that only support XInput accept it. Windows only.
 
@@ -12,7 +12,7 @@ The program reads the real controller through SDL (pygame) and feeds a virtual X
 
 You need Windows 10 (Windows 11 is untested) and a controller already paired or plugged in.
 
-**Option A: prebuilt EXE.** When a build is published it is attached to this repository's GitHub Releases page. Download `DInput-to-XInput.exe` and run it. No Python needed.
+**Option A: prebuilt EXE.** Download `D2X.exe` from the [Releases page](../../releases) and run it. No Python needed.
 
 **Option B: build it yourself.** Needs Python 3.10 or newer and PowerShell:
 
@@ -22,7 +22,7 @@ python -m venv .venv
 .\build.ps1
 ```
 
-Output: `dist\DInput-to-XInput.exe`. To run from source instead: `.\.venv\Scripts\python.exe app.py`.
+Output: `dist\D2X.exe`. To run from source instead: `.\.venv\Scripts\python.exe app.py`.
 
 ### The ViGEmBus driver
 
@@ -33,7 +33,7 @@ ViGEmBus is end-of-life upstream. It still works, but it is no longer updated.
 ## Use
 
 1. Connect the controller (Bluetooth pairing or USB). If it is a Bluetooth pad that sleeps, press a button to wake it.
-2. Run `DInput-to-XInput.exe` and leave it running while you play.
+2. Run `D2X.exe` and leave it running while you play.
 3. The window shows **Converting: <controller name>** when it is working. Start your game; it should see an Xbox 360 controller.
 
 Window options:
@@ -60,7 +60,7 @@ Notes on triggers: if your pad reports its triggers as an analog axis, you get a
 
 ### Mapping files
 
-Mappings are plain JSON files, one per controller, in `%APPDATA%\DInput2XInput\mappings` (the **Open folder** button opens it). The files in this repository's [`mappings`](mappings) folder are copied there on first run. Structure:
+Mappings are plain JSON files, one per controller, in `%APPDATA%\D2X\mappings` (the **Open folder** button opens it). The files in this repository's [`mappings`](mappings) folder are copied there on first run. Structure:
 
 ```
 { "name": "...", "vidpid": "2DC8:6012", "rest": [axis rest values],
@@ -77,7 +77,7 @@ Mappings are plain JSON files, one per controller, in `%APPDATA%\DInput2XInput\m
 If you made a mapping for a controller and it works, please open a pull request so it ships by default and others do not have to redo it.
 
 1. Fork this repository.
-2. Copy your mapping file from `%APPDATA%\DInput2XInput\mappings` into the repository's `mappings` folder. Name it after the controller, for example `Brand Model.json`.
+2. Copy your mapping file from `%APPDATA%\D2X\mappings` into the repository's `mappings` folder. Name it after the controller, for example `Brand Model.json`.
 3. Check that `vidpid` is set and that `name` matches the file name.
 4. Open a pull request. In the description, say which controller it is, how it connects (Bluetooth, USB, 2.4G dongle), which controller mode it was in (for example DInput), your Windows version, and which games you tried. Mention any controls you skipped.
 
@@ -85,7 +85,7 @@ Bug fixes and other improvements are welcome too.
 
 ## Tools
 
-`tools\probe.py` prints a controller's raw axes, buttons and hat. `tools\xcheck.py` lists occupied XInput slots (`watch` prints live values). `app.py --screenshot out.png` saves a picture of the window and exits. Logs are written to `%APPDATA%\DInput2XInput\dinput2xinput.log`.
+`tools\probe.py` prints a controller's raw axes, buttons and hat. `tools\xcheck.py` lists occupied XInput slots (`watch` prints live values). `app.py --screenshot out.png` saves a picture of the window and exits. Logs are written to `%APPDATA%\D2X\d2x.log`.
 
 ## Known limits
 
@@ -95,3 +95,7 @@ Bug fixes and other improvements are welcome too.
 - The real DInput pad stays visible to games next to the virtual one. If a game double-reads it, hide it with [HidHide](https://github.com/nefarius/HidHide).
 - Windows 11 is untested.
 - Only the 8BitDo Ultimate 2 over Bluetooth has been tested.
+
+## License
+
+[MIT](LICENSE)
