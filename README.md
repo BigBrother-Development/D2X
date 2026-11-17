@@ -99,7 +99,7 @@ Bug fixes and other improvements are welcome too.
 
 ## Tools
 
-`tools\probe.py` prints a controller's raw axes, buttons and hat. `tools\xcheck.py` lists occupied XInput slots (`watch` prints live values). `app.py --screenshot out.png` saves a picture of the window and exits. Logs are written to `%APPDATA%\D2X\d2x.log`.
+`tools\probe.py` prints a controller's raw axes, buttons and hat. `tools\xcheck.py` lists occupied XInput slots (`watch` prints live values). `tools\hhprobe.py` prints the HidHide active flag, whitelist and blacklist (read-only). `app.py --screenshot out.png` saves a picture of the window and exits. Logs are written to `%APPDATA%\D2X\d2x.log`.
 
 ## Known limits
 
