@@ -1,3 +1,5 @@
+<img src="assets/icon.png" alt="D2X icon" width="96" align="right">
+
 # D2X: DInput to XInput
 
 Makes a generic DInput gamepad (Bluetooth or USB) look like an Xbox 360 (XInput) controller to Windows, so games that only support XInput accept it. Windows only.
